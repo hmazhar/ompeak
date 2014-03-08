@@ -9,20 +9,16 @@
 #include "float4.h"
 using namespace std;
 
-#define MAX_ITEMS  1024000*8
+#define MAX_ITEMS  1024000
 
 #define FETCH_2(sum, id, A)  sum += A[id];   id ++;   sum += A[id];   id ++;
 #define FETCH_8(sum, id, A)  FETCH_2(sum, id, A); FETCH_2(sum, id, A);   FETCH_2(sum, id, A);   FETCH_2(sum, id, A);
 
 void BandwidthFunction_float4(float4 * A, float * B) {
 
-		for (int id = 0; id < MAX_ITEMS/8; id) {
-
+		for (int id = 0; id < MAX_ITEMS; id+=1) {
 			float4 sum = 0;
-
-			FETCH_8(sum, id, A);
- 			FETCH_8(sum, id, A);
-
+			sum += A[id];
 			B[id]= sum.x+sum.y+sum.z+sum.w;
 		}
 }
@@ -56,8 +52,7 @@ int main(int argc, char *argv[]) {
 		double end = omp_get_wtime();
 		total_time_omp = (end - start) * 1000;
 		total_flops = 4 * MAX_ITEMS / ((end - start)) / 1e9;
-		total_memory = MAX_ITEMS / ((end - start)) / 1024.0 / 1024.0 / 1024.0;
-		total_memory = (16 * 4 * 4) * total_memory;
+		total_memory = (1 * 4 * 4) * MAX_ITEMS / ((end - start)) / 1024.0 / 1024.0 / 1024.0;;
 		printf("\nExecution time in milliseconds =  %0.3f ms | %0.3f Gflop | %0.3f GB/s \n", total_time_omp, total_flops, total_memory);
 	}
 
