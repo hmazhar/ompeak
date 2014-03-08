@@ -18,13 +18,12 @@ public:
 int main(int argc, char *argv[]) {
 	int thread_num = 1;
 	if (argc > 1) {	thread_num = atoi(argv[1]);}
-	omp_set_num_threads(thread_num);
-
 	double runs = 27;
 	float4* A = (float4*) _mm_malloc (pow(2,runs)*sizeof(float4), 16 );
 	float4* B = (float4*) _mm_malloc (pow(2,runs)*sizeof(float4), 16 );
 	float4* C = (float4*) _mm_malloc (pow(2,runs)*sizeof(float4), 16 );
 	float4* D = (float4*) _mm_malloc (pow(2,runs)*sizeof(float4), 16 );
+
 	//Generate data
 	#pragma omp parallel for 
 	for (int i = 0; i < 134217728; i++) {
@@ -33,6 +32,15 @@ int main(int argc, char *argv[]) {
 		C[i] = float4(2.0/float(i));
 		D[i] = float4(3.0/float(i));
 	}
+	printf("Memory transfered in MBytes (column) for a certain number of threads (rows): \n");
+	printf("   \t");
+	for (int i = 14; i < runs; i++) {
+		printf(" %4.2f\t",sizeof(float4)*pow(2,i)/1024.0/1024.0);
+	}
+	printf("\n");
+	for (int threads = 1; threads <= thread_num; threads++) {
+		omp_set_num_threads(threads);
+		printf("%3d\t", threads);
 	for (int i = 14; i < runs; i++) {
 		unsigned int MAX_ITEMS  = pow(2,i);
 		//Clear the cache!
@@ -50,8 +58,11 @@ int main(int argc, char *argv[]) {
 			A[id+3]= A[id+3]+B[id+3];
 		}
 		double end = omp_get_wtime();
-		printf("Execution time =  %0.3f ms | Memory Transfered:  %0.3f| Bandwidth  %0.3f GB/s \n", (end - start) * 1000, sizeof(float4)*MAX_ITEMS/1024.0/1024.0, (3 * 4 * 4) * MAX_ITEMS / ((end - start)) / 1024.0 / 1024.0 / 1024.0);
+		printf(" %0.3f\t",(3 * 4 * 4) * MAX_ITEMS / ((end - start)) / 1024.0 / 1024.0 / 1024.0);
+		//printf("Execution time =  %0.3f ms | Memory Transfered:  %0.3f| Bandwidth  %0.3f GB/s \n", (end - start) * 1000, sizeof(float4)*MAX_ITEMS/1024.0/1024.0, (3 * 4 * 4) * MAX_ITEMS / ((end - start)) / 1024.0 / 1024.0 / 1024.0);
 	}
+	printf("\n");
+}
 	_mm_free(A);
 	_mm_free(B);
 	_mm_free(C);
