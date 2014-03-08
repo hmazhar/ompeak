@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
 	double total_flops;
 	double total_memory;
 	
-	for (int i = 19; i < runs; i++) {
+	for (int i = 1; i < runs; i++) {
 unsigned int MAX_ITEMS  = pow(2,i);
 	#pragma omp parallel for 
 	for (int i = 0; i < MAX_ITEMS; i++) {
@@ -40,15 +40,15 @@ unsigned int MAX_ITEMS  = pow(2,i);
 		unsigned int splits = MAX_ITEMS/split_size;
 
 		double start = omp_get_wtime();
-		for(int i=0; i<splits; i++){
-			#pragma omp parallel for
-			for (int id = i*split_size; id < (i+1)*(split_size); id+=4) {
+		//for(int i=0; i<splits; i++){
+		//	#pragma omp parallel for
+			for (int id = 0; id < MAX_ITEMS; id+=4) {
 				A[id+0]= A[id+0]+B[id+0];
 				A[id+1]= A[id+1]+B[id+1];
 				A[id+2]= A[id+2]+B[id+2];
 				A[id+3]= A[id+3]+B[id+3];
 			}
-		}
+		//}
 		double end = omp_get_wtime();
 		total_time_omp = (end - start) * 1000;
 		total_flops = MAX_ITEMS / ((end - start)) / 1e9;
