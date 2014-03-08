@@ -29,28 +29,29 @@ int main(int argc, char *argv[]) {
 	double total_flops;
 	double total_memory;
 	
-	for (int i = 0; i < runs; i++) {
+	for (int i = 19; i < runs; i++) {
 unsigned int MAX_ITEMS  = pow(2,i);
 	#pragma omp parallel for 
 	for (int i = 0; i < MAX_ITEMS; i++) {
 		A[i] = float4(1.0);
 		B[i] = float4(1.3);
 	}
-
-
+		unsigned int split_size = pow(2,19);
+		unsigned int splits = MAX_ITEMS/split_size;
+	
 		double start = omp_get_wtime();
-		
-		#pragma omp parallel for
-		for (int id = 0; id < MAX_ITEMS; id++) {
-			A[id]= A[id]+B[id];
+		for(int i=0; i<splits; i++){
+			#pragma omp parallel for
+			for (int id = i*split_size; id < (i+1)*(split_size); id++) {
+				A[id]= A[id]+B[id];
+			}
 		}
-
 		double end = omp_get_wtime();
 		total_time_omp = (end - start) * 1000;
 		total_flops = MAX_ITEMS / ((end - start)) / 1e9;
 
 		total_memory = (3 * 4 * 4) * MAX_ITEMS / ((end - start)) / 1024.0 / 1024.0 / 1024.0; ;
-		printf("Execution time in milliseconds =  %0.3f ms | %0.3f|  %0.3f GB/s \n", total_time_omp, sizeof(float4)*MAX_ITEMS/1024.0/1024.0/1024.0, total_memory);
+		printf("Execution time in milliseconds =  %0.3f ms | %0.3f|  %0.3f GB/s \n", total_time_omp, sizeof(float4)*MAX_ITEMS/1024.0/1024.0, total_memory);
 
 	}
 	_mm_free(A);
