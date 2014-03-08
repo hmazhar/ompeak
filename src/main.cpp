@@ -42,7 +42,7 @@ unsigned int MAX_ITEMS  = pow(2,i);
 		unsigned int splits = MAX_ITEMS/split_size;
 
 	#pragma omp parallel for 
-	for (int i = 0; i < pow(2,runs); i++) {
+	for (unsigned int i = 0; i < 134217728; i++) {
 		C[i] = D[i]+C[i];
 	}
 		double start = omp_get_wtime();
