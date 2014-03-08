@@ -31,8 +31,8 @@ int main(int argc, char *argv[]) {
 
 
 	// Allocate memory for each vector on host
-	vector<float4> A_f4(MAX_ITEMS);
-	vector<float4>     B(MAX_ITEMS);
+	float4* A_f4 = (float4 *)_mm_malloc(MAX_ITEMS*sizeof(float4), 16);
+	float4* B = (float4 *)_mm_malloc(MAX_ITEMS*sizeof(float4), 16);
 	// Initialize vectors on host
 	#pragma omp parallel for schedule(static)
 	for (int i = 0; i < MAX_ITEMS; i++) {
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 	double runs = 100;
 	for (int i = 0; i < runs; i++) {
 		double start = omp_get_wtime();
-		BandwidthFunction_float4(A_f4.data(), B.data());
+		BandwidthFunction_float4(A_f4, B);
 		double end = omp_get_wtime();
 		total_time_omp += (end - start) * 1000;
 		total_flops += MAX_ITEMS / ((end - start)) / 1e9;
@@ -55,8 +55,7 @@ int main(int argc, char *argv[]) {
 		
 	}
 printf("\nExecution time in milliseconds =  %0.3f ms | %0.3f Gflop | %0.3f GB/s \n", total_time_omp/runs, total_flops/runs, total_memory/runs);
-	A_f4.clear();
-	B.clear();
-
+	_mm_free(A_f4);
+	_mm_free(B);
 	return 0;
 }
