@@ -1,4 +1,6 @@
 ompeak
 ======
 
-An OpenMP benchmarking utility to compare agains OpenCL
+An OpenMP benchmarking utility
+
+Currently does a memory bandwidth test using float4
