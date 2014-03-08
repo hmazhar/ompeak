@@ -41,7 +41,7 @@ unsigned int MAX_ITEMS  = pow(2,i);
 
 		double start = omp_get_wtime();
 		//for(int i=0; i<splits; i++){
-		//	#pragma omp parallel for
+			#pragma omp parallel for
 			for (int id = 0; id < MAX_ITEMS; id+=4) {
 				A[id+0]= A[id+0]+B[id+0];
 				A[id+1]= A[id+1]+B[id+1];
