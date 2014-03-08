@@ -21,8 +21,10 @@ int main(int argc, char *argv[]) {
 
 	double runs = 27;
 	// Allocate memory for each vector on host
-	float4* A = (float4 *)_mm_malloc(pow(2,runs)*sizeof(float4), 16);
-	float4* B = (float4 *)_mm_malloc(pow(2,runs)*sizeof(float4), 16);
+	vector<float4> A (pow(2,runs));
+	vector<float4> B (pow(2,runs));
+	vector<float4> C (pow(2,runs));
+	vector<float4> D (pow(2,runs));
 	// Initialize vectors on host
 
 	double total_time_omp;
@@ -33,12 +35,16 @@ int main(int argc, char *argv[]) {
 unsigned int MAX_ITEMS  = pow(2,i);
 	#pragma omp parallel for 
 	for (int i = 0; i < MAX_ITEMS; i++) {
-		A[i] = float4(1.0);
-		B[i] = float4(1.3);
+		A[i] = float4(1.0*i);
+		B[i] = float4(1.3/float(i));
 	}
 		unsigned int split_size = pow(2,19);
 		unsigned int splits = MAX_ITEMS/split_size;
 
+	#pragma omp parallel for 
+	for (int i = 0; i < pow(2,runs); i++) {
+		C[i] = D[i]+C[i];
+	}
 		double start = omp_get_wtime();
 		//for(int i=0; i<splits; i++){
 			#pragma omp parallel for
@@ -49,6 +55,10 @@ unsigned int MAX_ITEMS  = pow(2,i);
 				A[id+3]= A[id+3]+B[id+3];
 			}
 		//}
+
+
+
+
 		double end = omp_get_wtime();
 		total_time_omp = (end - start) * 1000;
 		total_flops = MAX_ITEMS / ((end - start)) / 1e9;
@@ -57,7 +67,7 @@ unsigned int MAX_ITEMS  = pow(2,i);
 		printf("Execution time in milliseconds =  %0.3f ms | %0.3f|  %0.3f GB/s \n", total_time_omp, sizeof(float4)*MAX_ITEMS/1024.0/1024.0, total_memory);
 
 	}
-	_mm_free(A);
-	_mm_free(B);
+	A.clear();
+	B.clear();
 	return 0;
 }
