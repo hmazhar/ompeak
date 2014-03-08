@@ -9,16 +9,6 @@
 #include "float4.h"
 using namespace std;
 
-unsigned int MAX_ITEMS  = pow(2,25);
-
-
-inline void BandwidthFunction_float4( float4 * __restrict__ A, const float4 * __restrict__ B) {
-#pragma omp parallel for
-		for (int id = 0; id < MAX_ITEMS; id++) {
-			A[id]= A[id]+B[id];
-		}
-}
-
 int main(int argc, char *argv[]) {
 
 	int thread_num = 1;
@@ -29,22 +19,25 @@ int main(int argc, char *argv[]) {
 	omp_set_num_threads(thread_num);
 	// Length of vectors
 
-
+	double runs = 27;
 	// Allocate memory for each vector on host
-	float4* A = (float4 *)_mm_malloc(MAX_ITEMS*sizeof(float4), 16);
-	float4* B = (float4 *)_mm_malloc(MAX_ITEMS*sizeof(float4), 16);
+	float4* A = (float4 *)_mm_malloc(pow(2,runs)*sizeof(float4), 16);
+	float4* B = (float4 *)_mm_malloc(pow(2,runs)*sizeof(float4), 16);
 	// Initialize vectors on host
-	#pragma omp parallel for 
-	for (int i = 0; i < MAX_ITEMS; i++) {
-		A[i] = float4(cosf(i) * cosf(i));
-		B[i] = float4(cosf(i) * cosf(i));
-	}
 
 	double total_time_omp;
 	double total_flops;
 	double total_memory;
-	double runs = 100;
+	
 	for (int i = 0; i < runs; i++) {
+unsigned int MAX_ITEMS  = pow(2,i);
+	#pragma omp parallel for 
+	for (int i = 0; i < MAX_ITEMS; i++) {
+		A[i] = float4(1.0);
+		B[i] = float4(1.3);
+	}
+
+
 		double start = omp_get_wtime();
 		
 		#pragma omp parallel for
@@ -53,13 +46,13 @@ int main(int argc, char *argv[]) {
 		}
 
 		double end = omp_get_wtime();
-		total_time_omp += (end - start) * 1000;
-		total_flops += MAX_ITEMS / ((end - start)) / 1e9;
+		total_time_omp = (end - start) * 1000;
+		total_flops = MAX_ITEMS / ((end - start)) / 1e9;
 
-		total_memory += (3 * 4 * 4) * MAX_ITEMS / ((end - start)) / 1024.0 / 1024.0 / 1024.0; ;
-		
+		total_memory = (3 * 4 * 4) * MAX_ITEMS / ((end - start)) / 1024.0 / 1024.0 / 1024.0; ;
+		printf("Execution time in milliseconds =  %0.3f ms | %0.3f|  %0.3f GB/s \n", total_time_omp, sizeof(float4)*MAX_ITEMS/1024.0/1024.0/1024.0, total_memory);
+
 	}
-printf("\nExecution time in milliseconds =  %0.3f ms | %0.3f Gflop | %0.3f GB/s \n", total_time_omp/runs, total_flops/runs, total_memory/runs);
 	_mm_free(A);
 	_mm_free(B);
 	return 0;
