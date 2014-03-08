@@ -38,12 +38,15 @@ unsigned int MAX_ITEMS  = pow(2,i);
 	}
 		unsigned int split_size = pow(2,19);
 		unsigned int splits = MAX_ITEMS/split_size;
-	
+
 		double start = omp_get_wtime();
 		for(int i=0; i<splits; i++){
 			#pragma omp parallel for
-			for (int id = i*split_size; id < (i+1)*(split_size); id++) {
-				A[id]= A[id]+B[id];
+			for (int id = i*split_size; id < (i+1)*(split_size); id+=4) {
+				A[id+0]= A[id+0]+B[id+0];
+				A[id+1]= A[id+1]+B[id+1];
+				A[id+2]= A[id+2]+B[id+2];
+				A[id+3]= A[id+3]+B[id+3];
 			}
 		}
 		double end = omp_get_wtime();
