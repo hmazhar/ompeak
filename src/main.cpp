@@ -1,5 +1,6 @@
 #include "omp.h"
 #include <stdio.h>
+#include <string>
 #include <math.h>
 #include <nmmintrin.h>
 using namespace std;
@@ -17,8 +18,10 @@ public:
 
 int main(int argc, char *argv[]) {
 	int thread_num = 1;
+	bool single_test = false;
 	if (argc > 1) {	thread_num = atoi(argv[1]);}
-	double runs = 27;
+	if (argc > 2 && string(argv[2])=="-s") {single_test = true; printf("Performing constant thread test\n");}
+	double runs = 28;
 	float4* A = (float4*) _mm_malloc (pow(2,runs)*sizeof(float4), 16 );
 	float4* B = (float4*) _mm_malloc (pow(2,runs)*sizeof(float4), 16 );
 	float4* C = (float4*) _mm_malloc (pow(2,runs)*sizeof(float4), 16 );
@@ -38,7 +41,15 @@ int main(int argc, char *argv[]) {
 		printf(" %4.2f\t",sizeof(float4)*pow(2,i)/1024.0/1024.0);
 	}
 	printf("\n");
-	for (int threads = 1; threads <= thread_num; threads++) {
+
+	int start_threads = 1;
+	int max_threads = thread_num;
+
+	if(single_test){
+		start_threads = thread_num;
+	}
+
+	for (int threads = start_threads; threads <= max_threads; threads++) {
 		omp_set_num_threads(threads);
 		printf("%3d\t", threads);
 	for (int i = 14; i < runs; i++) {
@@ -48,7 +59,7 @@ int main(int argc, char *argv[]) {
 		for (unsigned int i = 0; i < 134217728; i+=4) {
 			C[i] = D[i]+C[i];
 		}
-		//Run code
+		//Run benchmark
 		double start = omp_get_wtime();
 		#pragma omp parallel for
 		for (int id = 0; id < MAX_ITEMS; id++) {
@@ -59,7 +70,6 @@ int main(int argc, char *argv[]) {
 		}
 		double end = omp_get_wtime();
 		printf(" %0.3f\t",(3 * 4 * 4) * MAX_ITEMS / ((end - start)) / 1024.0 / 1024.0 / 1024.0);
-		//printf("Execution time =  %0.3f ms | Memory Transfered:  %0.3f| Bandwidth  %0.3f GB/s \n", (end - start) * 1000, sizeof(float4)*MAX_ITEMS/1024.0/1024.0, (3 * 4 * 4) * MAX_ITEMS / ((end - start)) / 1024.0 / 1024.0 / 1024.0);
 	}
 	printf("\n");
 }
