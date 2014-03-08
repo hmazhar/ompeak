@@ -9,14 +9,20 @@
 #include "float4.h"
 using namespace std;
 
-#define MAX_ITEMS  1024000*4
-#define DIV  16
+unsigned int MAX_ITEMS  = pow(2,25);
+#define DIV  16.0
 #define FETCH_2(sum, id, A)  sum += A[id];   id ++;   sum += A[id];   id ++;
 #define FETCH_8(sum, id, A)  FETCH_2(sum, id, A); FETCH_2(sum, id, A);   FETCH_2(sum, id, A);   FETCH_2(sum, id, A);
 
-void BandwidthFunction_float4(float4 * A, float * B) {
-#pragma omp parallel for
-		for (int id = 0; id < MAX_ITEMS-DIV; id+=8) {
+void BandwidthFunction_float4(float4 * __restrict__ A, float * __restrict__ B) {
+//#pragma omp parallel for schedule(static)
+
+		//float4 *A = (float4*) __builtin_assume_aligned(a, 16);
+		//float *B = (float*)__builtin_assume_aligned(b, 16);
+
+
+		for (int id = 0; id < MAX_ITEMS-DIV; id+=DIV) {
+
 			float4 sum = 0;
 			sum += A[id+0];
 			sum += A[id+1];
@@ -26,7 +32,21 @@ void BandwidthFunction_float4(float4 * A, float * B) {
 			sum += A[id+5];
 			sum += A[id+6];
 			sum += A[id+7];
-			B[id]= sum.x+sum.y+sum.z+sum.w;
+			sum += A[id+8];
+			sum += A[id+9];
+			sum += A[id+10];
+			sum += A[id+11];
+			sum += A[id+12];
+			sum += A[id+13];
+			sum += A[id+14];
+			sum += A[id+15];
+
+
+	__m128 t1 = _mm_hadd_ps(sum.mmvalue, sum.mmvalue);
+	__m128 t2 = _mm_hadd_ps(t1, t1);
+
+
+			B[id]= _mm_cvtss_f32(t2);
 		}
 }
 
