@@ -67,8 +67,16 @@ int main(int argc, char *argv[]) {
 	bool force_cache_line = true;
 	int runs = 26;
 	if (argc > 1) {	thread_num = atoi(argv[1]);}
-	if (argc > 2 && string(argv[2])=="-s") {single_test = true; printf("Performing constant thread test\n");}
-	if (argc > 3 && string(argv[3])=="-ncl") {force_cache_line = false; printf("Do not force cache line\n");}
+	if (argc > 2){
+		for(int args = 2; args < argc; args++){
+			if(string(argv[args])=="-s"){
+				single_test = true; printf("Performing constant thread test\n");
+			}
+			if(string(argv[args])=="-ncl") {
+				force_cache_line = false; printf("Do not force cache line\n");
+			}
+		}
+	}
 	
 	int max_items = pow(2,runs);
 
