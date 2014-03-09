@@ -42,7 +42,7 @@ void MemoryTest_CacheLine(unsigned int i, float4* A, float4* B){
 			A[id+3]= A[id+3]+B[id+3];
 		}
 		double end = omp_get_wtime();
-		printf(" %0.3f\t",(3 * 4 * 4 * 4) * ITEMS / ((end - start)) / 1024.0 / 1024.0 / 1024.0);
+		printf(" %0.3f\t",(3 * 4 * 4 * 4) * ITEMS/4.0 / ((end - start)) / 1024.0 / 1024.0 / 1024.0);
 }
 
 
