@@ -51,19 +51,8 @@ int main(int argc, char *argv[]) {
 	if (argc > 1) {	thread_num = atoi(argv[1]);}
 	if (argc > 2 && string(argv[2])=="-s") {single_test = true; printf("Performing constant thread test\n");}
 	double runs = 26;
-	float4* A = (float4*) _mm_malloc (pow(2,runs)*sizeof(float4), 16 );
-	float4* B = (float4*) _mm_malloc (pow(2,runs)*sizeof(float4), 16 );
-	float4* C = (float4*) _mm_malloc (pow(2,runs)*sizeof(float4), 16 );
-	float4* D = (float4*) _mm_malloc (pow(2,runs)*sizeof(float4), 16 );
-	int max_items = pow(2,runs);
-	//Generate data
-	#pragma omp parallel for 
-	for (int i = 0; i < max_items; i++) {
-		A[i] = float4(i);
-		B[i] = float4(1.0/float(i));
-		C[i] = float4(2.0/float(i));
-		D[i] = float4(3.0/float(i));
-	}
+
+	
 	printf("Memory transfered in MBytes (column) for a certain number of threads (rows): \n");
 	printf("   \t");
 	for (int i = 14; i < runs; i++) {
@@ -81,15 +70,34 @@ int main(int argc, char *argv[]) {
 	for (int threads = start_threads; threads <= max_threads; threads++) {
 		omp_set_num_threads(threads);
 		printf("%3d\t", threads);
+
+	float4* A = (float4*) _mm_malloc (pow(2,runs)*sizeof(float4), 16 );
+	float4* B = (float4*) _mm_malloc (pow(2,runs)*sizeof(float4), 16 );
+	float4* C = (float4*) _mm_malloc (pow(2,runs)*sizeof(float4), 16 );
+	float4* D = (float4*) _mm_malloc (pow(2,runs)*sizeof(float4), 16 );
+
+
+	int max_items = pow(2,runs);
+	//Generate data
+	#pragma omp parallel for 
+	for (int i = 0; i < max_items; i++) {
+		A[i] = float4(i);
+		B[i] = float4(1.0/float(i));
+		C[i] = float4(2.0/float(i));
+		D[i] = float4(3.0/float(i));
+	}
+
+
 	for (int i = 14; i < runs; i++) {
 		ClearCache(C,D,max_items);
 		MemoryTest(i, A, B);
 	}
 	printf("\n");
-}
-	_mm_free(A);
+		_mm_free(A);
 	_mm_free(B);
 	_mm_free(C);
 	_mm_free(D);
+}
+
 	return 0;
 }
