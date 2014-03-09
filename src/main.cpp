@@ -48,10 +48,9 @@ void MemoryTest(unsigned int i, float4* A, float4* B){
 int main(int argc, char *argv[]) {
 	int thread_num = 1;
 	bool single_test = false;
+	double runs = 28;
 	if (argc > 1) {	thread_num = atoi(argv[1]);}
 	if (argc > 2 && string(argv[2])=="-s") {single_test = true; printf("Performing constant thread test\n");}
-	double runs = 26;
-
 	
 	printf("Memory transfered in MBytes (column) for a certain number of threads (rows): \n");
 	printf("   \t");
