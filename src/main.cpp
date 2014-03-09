@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string>
 #include <math.h>
+#include <unistd.h>
 #include <nmmintrin.h>
 using namespace std;
 class __attribute__ ((aligned(16))) float4 {
@@ -16,20 +17,48 @@ public:
 	inline float4 operator+(const float4& b) const {	return _mm_add_ps(mmvalue, b.mmvalue);}
 };
 
+
+void ClearCache(float4* C, float4* D, unsigned int max){
+
+
+		#pragma omp parallel for 
+		for (unsigned int i = 0; i < max; i+=4) {
+			C[i] = D[i]+C[i];
+		}
+
+}
+
+void MemoryTest(unsigned int i, float4* A, float4* B){
+		unsigned int ITEMS  = pow(2,i);
+		//Clear the cache!
+
+		//Run benchmark
+		double start = omp_get_wtime();
+		#pragma omp parallel for
+		for (int id = 0; id < ITEMS; id++) {
+			A[id+0]= A[id+0]+B[id+0];
+			A[id+1]= A[id+1]+B[id+1];
+			A[id+2]= A[id+2]+B[id+2];
+			A[id+3]= A[id+3]+B[id+3];
+		}
+		double end = omp_get_wtime();
+		printf(" %0.3f\t",(3 * 4 * 4) * ITEMS / ((end - start)) / 1024.0 / 1024.0 / 1024.0);
+}
+
 int main(int argc, char *argv[]) {
 	int thread_num = 1;
 	bool single_test = false;
 	if (argc > 1) {	thread_num = atoi(argv[1]);}
 	if (argc > 2 && string(argv[2])=="-s") {single_test = true; printf("Performing constant thread test\n");}
-	double runs = 28;
+	double runs = 26;
 	float4* A = (float4*) _mm_malloc (pow(2,runs)*sizeof(float4), 16 );
 	float4* B = (float4*) _mm_malloc (pow(2,runs)*sizeof(float4), 16 );
 	float4* C = (float4*) _mm_malloc (pow(2,runs)*sizeof(float4), 16 );
 	float4* D = (float4*) _mm_malloc (pow(2,runs)*sizeof(float4), 16 );
-
+	int max_items = pow(2,runs);
 	//Generate data
 	#pragma omp parallel for 
-	for (int i = 0; i < 134217728; i++) {
+	for (int i = 0; i < max_items; i++) {
 		A[i] = float4(i);
 		B[i] = float4(1.0/float(i));
 		C[i] = float4(2.0/float(i));
@@ -53,23 +82,8 @@ int main(int argc, char *argv[]) {
 		omp_set_num_threads(threads);
 		printf("%3d\t", threads);
 	for (int i = 14; i < runs; i++) {
-		unsigned int MAX_ITEMS  = pow(2,i);
-		//Clear the cache!
-		#pragma omp parallel for 
-		for (unsigned int i = 0; i < 134217728; i+=4) {
-			C[i] = D[i]+C[i];
-		}
-		//Run benchmark
-		double start = omp_get_wtime();
-		#pragma omp parallel for
-		for (int id = 0; id < MAX_ITEMS; id++) {
-			A[id+0]= A[id+0]+B[id+0];
-			A[id+1]= A[id+1]+B[id+1];
-			A[id+2]= A[id+2]+B[id+2];
-			A[id+3]= A[id+3]+B[id+3];
-		}
-		double end = omp_get_wtime();
-		printf(" %0.3f\t",(3 * 4 * 4) * MAX_ITEMS / ((end - start)) / 1024.0 / 1024.0 / 1024.0);
+		ClearCache(C,D,max_items);
+		MemoryTest(i, A, B);
 	}
 	printf("\n");
 }
