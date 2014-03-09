@@ -13,7 +13,7 @@ This program has one argument which takes the number of threads, if it is not sp
 
 ./ompeak #threads (-s) (-ncl)
 
--s: run a single test with te number of threads specified
+-s: run a single test with the number of threads specified
 -ncl: do not force the code to use an entire cache line
 
 ~~~
@@ -21,7 +21,7 @@ This program has one argument which takes the number of threads, if it is not sp
 ##Output:
 
 The program outputs information in the following way:
-A table is generated with each column showing the size of memory transfered and the rows showing the number of openMP threads. 
+A table is generated with each column showing the size of memory transferred (MBytes) and the rows showing the number of openMP threads. 
 ~~~
 
 ./ompeak 32
