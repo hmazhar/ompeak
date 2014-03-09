@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
 	int thread_num = 1;
 	bool single_test = false;
 	bool force_cache_line = true;
-	int runs = 27;
+	int runs = 26;
 	if (argc > 1) {	thread_num = atoi(argv[1]);}
 	if (argc > 2 && string(argv[2])=="-s") {single_test = true; printf("Performing constant thread test\n");}
 	if (argc > 3 && string(argv[3])=="-ncl") {force_cache_line = false; printf("Do not force cache line\n");}
