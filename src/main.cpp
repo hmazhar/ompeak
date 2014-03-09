@@ -35,7 +35,7 @@ void MemoryTest_CacheLine(unsigned int i, float4* A, float4* B){
 		//Run benchmark
 		double start = omp_get_wtime();
 		#pragma omp parallel for
-		for (int id = 0; id < ITEMS; id+=4) {
+		for (unsigned int id = 0; id < ITEMS; id+=4) {
 			A[id+0]= A[id+0]+B[id+0];
 			A[id+1]= A[id+1]+B[id+1];
 			A[id+2]= A[id+2]+B[id+2];
@@ -53,7 +53,7 @@ void MemoryTest_NoCacheLine(unsigned int i, float4* A, float4* B){
 		//Run benchmark
 		double start = omp_get_wtime();
 		#pragma omp parallel for
-		for (int id = 0; id < ITEMS; id++) {
+		for (unsigned int id = 0; id < ITEMS; id++) {
 			A[id]= A[id]+B[id];
 		}
 		double end = omp_get_wtime();
@@ -107,14 +107,13 @@ int main(int argc, char *argv[]) {
 		ClearCache(C,D,max_items);
 		MemoryTest_CacheLine(i, A, B);
 	}
-
 	// for (int i = 14; i < runs; i++) {
 	// 	ClearCache(C,D,max_items);
 	// 	MemoryTest_NoCacheLine(i, A, B);
 	// }
 
 	printf("\n");
-		_mm_free(A);
+	_mm_free(A);
 	_mm_free(B);
 	_mm_free(C);
 	_mm_free(D);
