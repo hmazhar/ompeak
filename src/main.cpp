@@ -57,17 +57,18 @@ void MemoryTest_NoCacheLine(unsigned int i, float4* A, float4* B){
 			A[id]= A[id]+B[id];
 		}
 		double end = omp_get_wtime();
-		printf(" %0.3f\t",(3 * 4 * 4 * 4) * ITEMS / ((end - start)) / 1024.0 / 1024.0 / 1024.0);
+		printf(" %0.3f\t",(3 * 4 * 4) * ITEMS / ((end - start)) / 1024.0 / 1024.0 / 1024.0);
 }
 
 
 int main(int argc, char *argv[]) {
 	int thread_num = 1;
 	bool single_test = false;
+	bool force_cache_line = true;
 	double runs = 28;
 	if (argc > 1) {	thread_num = atoi(argv[1]);}
 	if (argc > 2 && string(argv[2])=="-s") {single_test = true; printf("Performing constant thread test\n");}
-	
+	if (argc > 3 && string(argv[3])=="-ncl") {force_cache_line = false; printf("Do not force cache line\n");}
 	printf("Memory transfered in MBytes (column) for a certain number of threads (rows): \n");
 	printf("   \t");
 	for (int i = 14; i < runs; i++) {
@@ -105,7 +106,11 @@ int main(int argc, char *argv[]) {
 
 	for (int i = 14; i < runs; i++) {
 		ClearCache(C,D,max_items);
-		MemoryTest_CacheLine(i, A, B);
+		if(force_cache_line){
+			MemoryTest_CacheLine(i, A, B);
+		}else{
+			MemoryTest_NoCacheLine(i, A, B);
+		}
 	}
 	// for (int i = 14; i < runs; i++) {
 	// 	ClearCache(C,D,max_items);
