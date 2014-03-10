@@ -94,8 +94,8 @@ int main(int argc, char *argv[]) {
 		start_threads = thread_num;
 	}
 
-	float4* C = (float4*) _mm_malloc (max_items*sizeof(float4), 16 );
-	float4* D = (float4*) _mm_malloc (max_items*sizeof(float4), 16 );
+	float4* C = (float4*) malloc (max_items*sizeof(float4));
+	float4* D = (float4*) malloc (max_items*sizeof(float4));
 
 #pragma omp parallel for 
 	for (int i = 0; i < max_items; i++) {
@@ -107,8 +107,8 @@ int main(int argc, char *argv[]) {
 		omp_set_num_threads(threads);
 		printf("%3d\t", threads);
 
-	float4* A = (float4*) _mm_malloc (max_items*sizeof(float4), 16 );
-	float4* B = (float4*) _mm_malloc (max_items*sizeof(float4), 16 );
+	float4* A = (float4*) malloc (max_items*sizeof(float4));
+	float4* B = (float4*) malloc (max_items*sizeof(float4));
 
 	//Generate data
 	#pragma omp parallel for 
@@ -125,11 +125,11 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	printf("\n");
-	_mm_free(A);
-	_mm_free(B);
+	free(A);
+	free(B);
 
 }
-	_mm_free(C);
-	_mm_free(D);
+	free(C);
+	free(D);
 	return 0;
 }
