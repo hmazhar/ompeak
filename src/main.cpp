@@ -4,17 +4,17 @@
 #include <math.h>
 #include <unistd.h>
 #include <nmmintrin.h>
+#include <assert.h>
 using namespace std;
 class __attribute__ ((aligned(16))) float4 {
 public:
-	union {
-		struct {float x, y, z, w;};
-		__m128 mmvalue;
-	};
+	__m128 mmvalue;
 	inline float4() 		:mmvalue(_mm_setzero_ps()) { }
 	inline float4(float a) 	:mmvalue(_mm_set1_ps(a)) {}
 	inline float4(__m128 m) :mmvalue(m) {}
+	operator __m128() const { return mmvalue;}
 	inline float4 operator+(const float4& b) const {	return _mm_add_ps(mmvalue, b.mmvalue);}
+	inline float4& operator+=(const float4& b) { *this = *this + b; return *this; }
 
 };
 	static inline float horizontal_add(const __m128 & a) {
@@ -24,13 +24,15 @@ public:
 }
 
 void ClearCache(float4* C, float4* D, unsigned int max){
+		float4 sum (0);
 		#pragma omp parallel for 
 		for (unsigned int i = 0; i < max; i+=4) {
-			C[i] = D[i]+C[i];
+			sum += C[i]+D[i];
 		}
+		//Prevents compiler from optimizing away sum
+		assert(!_mm_testz_si128(sum, sum));
 
 }
-
 
 double MemoryTest_Write(unsigned int i, float4* A){
 		unsigned int ITEMS  = pow(2,i);
@@ -51,20 +53,24 @@ double MemoryTest_Write(unsigned int i, float4* A){
 		return bandwidth;
 }
 
-double MemoryTest_Read(unsigned int i, float4* A, float * B){
+double MemoryTest_Read(unsigned int i, float4* A){
 		unsigned int ITEMS  = pow(2,i);
 		//Clear the cache!
 
 		//Run benchmark
 		double start = omp_get_wtime();
+
+		float4 sum (0);
+
 		#pragma omp parallel for
 		for (unsigned int id = 0; id < ITEMS; id+=4) {
-
-			float4 ans = A[id+0]+A[id+1]+A[id+2]+A[id+3];
-			B[id/4]=horizontal_add(ans.mmvalue);
+			sum += A[id+0]+A[id+1]+A[id+2]+A[id+3];
 		}
+		//Prevents compiler from optimizing away sum
+		assert(!_mm_testz_si128(sum, sum));
+
 		double end = omp_get_wtime();
-		double bandwidth =(1 * 4 * 4 * 4+ 1*1*4) * ITEMS/4.0 / ((end - start)) / 1024.0 / 1024.0 / 1024.0;
+		double bandwidth =(1 * 4 * 4 * 4) * ITEMS/4.0 / ((end - start)) / 1024.0 / 1024.0 / 1024.0;
 		printf(" %0.3f\t",bandwidth);
 		return bandwidth;
 }
@@ -205,7 +211,7 @@ for (int threads = start_threads; threads <= max_threads; threads++) {
 	}
 	for (int i = 14; i < runs; i++) {
 		ClearCache(C,D,max_items);
-		current_bandwidth = MemoryTest_Read(i, A, B);
+		current_bandwidth = MemoryTest_Read(i, A);
 
 		if(best_bandwidth<current_bandwidth){
 			best_bandwidth = current_bandwidth;
@@ -236,6 +242,7 @@ for (int threads = start_threads; threads <= max_threads; threads++) {
 		A[i] = float4(i+1);
 	}
 	for (int i = 14; i < runs; i++) {
+
 		ClearCache(C,D,max_items);
 		current_bandwidth = MemoryTest_Write(i, A);
 
@@ -250,7 +257,6 @@ for (int threads = start_threads; threads <= max_threads; threads++) {
 
 }
 printf("Best: %d threads, \t%0.3f GB/s, \t%0.3f MB \n",best_threads, best_bandwidth,best_transfer_size);
-
 	free(C);
 	free(D);
 	return 0;
