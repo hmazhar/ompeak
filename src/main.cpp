@@ -99,8 +99,8 @@ int main(int argc, char *argv[]) {
 
 #pragma omp parallel for 
 	for (int i = 0; i < max_items; i++) {
-		C[i] = float4(2.0/float(i));
-		D[i] = float4(3.0/float(i));
+		C[i] = float4(2.0/float(i+1));
+		D[i] = float4(3.0/float(i+1));
 	}
 
 	for (int threads = start_threads; threads <= max_threads; threads++) {
@@ -113,8 +113,8 @@ int main(int argc, char *argv[]) {
 	//Generate data
 	#pragma omp parallel for 
 	for (int i = 0; i < max_items; i++) {
-		A[i] = float4(i);
-		B[i] = float4(1.0/float(i));
+		A[i] = float4(i+1);
+		B[i] = float4(1.0/float(i+1));
 	}
 	for (int i = 14; i < runs; i++) {
 		ClearCache(C,D,max_items);
