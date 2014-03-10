@@ -15,6 +15,11 @@ public:
 	inline float4(float a) 	:mmvalue(_mm_set1_ps(a)) {}
 	inline float4(__m128 m) :mmvalue(m) {}
 	inline float4 operator+(const float4& b) const {	return _mm_add_ps(mmvalue, b.mmvalue);}
+	static inline real horizontal_add(const __m128 & a) {
+	__m128 t1 = _mm_hadd_ps(a, a);
+	__m128 t2 = _mm_hadd_ps(t1, t1);
+	return _mm_cvtss_f32(t2);
+}
 };
 
 
@@ -56,7 +61,7 @@ void MemoryTest_Read(unsigned int i, float4* A, float * B){
 		for (unsigned int id = 0; id < ITEMS; id+=4) {
 
 			float4 ans = A[id+0]+A[id+1]+A[id+2]+A[id+3];
-			B[id/4]=ans.x+ans.y+ans.z+ans.w;
+			B[id/4]=horizontal_add(ans);
 		}
 		double end = omp_get_wtime();
 		printf(" %0.3f\t",(1 * 4 * 4 * 4+ 1*1*4) * ITEMS/4.0 / ((end - start)) / 1024.0 / 1024.0 / 1024.0);
