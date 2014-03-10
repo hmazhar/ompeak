@@ -24,8 +24,6 @@ public:
 }
 
 void ClearCache(float4* C, float4* D, unsigned int max){
-
-
 		#pragma omp parallel for 
 		for (unsigned int i = 0; i < max; i+=4) {
 			C[i] = D[i]+C[i];
@@ -34,7 +32,7 @@ void ClearCache(float4* C, float4* D, unsigned int max){
 }
 
 
-void MemoryTest_Write(unsigned int i, float4* A){
+double MemoryTest_Write(unsigned int i, float4* A){
 		unsigned int ITEMS  = pow(2,i);
 		//Clear the cache!
 
@@ -48,10 +46,12 @@ void MemoryTest_Write(unsigned int i, float4* A){
 			A[id+3]= id+3;
 		}
 		double end = omp_get_wtime();
-		printf(" %0.3f\t",(1 * 4 * 4 * 4) * ITEMS/4.0 / ((end - start)) / 1024.0 / 1024.0 / 1024.0);
+		double bandwidth =(1 * 4 * 4 * 4) * ITEMS/4.0 / ((end - start)) / 1024.0 / 1024.0 / 1024.0;
+		printf(" %0.3f\t",bandwidth);
+		return bandwidth;
 }
 
-void MemoryTest_Read(unsigned int i, float4* A, float * B){
+double MemoryTest_Read(unsigned int i, float4* A, float * B){
 		unsigned int ITEMS  = pow(2,i);
 		//Clear the cache!
 
@@ -64,11 +64,13 @@ void MemoryTest_Read(unsigned int i, float4* A, float * B){
 			B[id/4]=horizontal_add(ans.mmvalue);
 		}
 		double end = omp_get_wtime();
-		printf(" %0.3f\t",(1 * 4 * 4 * 4+ 1*1*4) * ITEMS/4.0 / ((end - start)) / 1024.0 / 1024.0 / 1024.0);
+		double bandwidth =(1 * 4 * 4 * 4+ 1*1*4) * ITEMS/4.0 / ((end - start)) / 1024.0 / 1024.0 / 1024.0;
+		printf(" %0.3f\t",bandwidth);
+		return bandwidth;
 }
 
 
-void MemoryTest_ReadWriteCacheLine(unsigned int i, float4* A, float4* B){
+double MemoryTest_ReadWriteCacheLine(unsigned int i, float4* A, float4* B){
 		unsigned int ITEMS  = pow(2,i);
 		//Clear the cache!
 
@@ -82,11 +84,13 @@ void MemoryTest_ReadWriteCacheLine(unsigned int i, float4* A, float4* B){
 			A[id+3]= A[id+3]+B[id+3];
 		}
 		double end = omp_get_wtime();
-		printf(" %0.3f\t",(3 * 4 * 4 * 4) * ITEMS/4.0 / ((end - start)) / 1024.0 / 1024.0 / 1024.0);
+		double bandwidth = (3 * 4 * 4 * 4) * ITEMS/4.0 / ((end - start)) / 1024.0 / 1024.0 / 1024.0;
+		printf(" %0.3f\t",bandwidth);
+		return bandwidth;
 }
 
 
-void MemoryTest_ReadWriteNoCacheLine(unsigned int i, float4* A, float4* B){
+double MemoryTest_ReadWriteNoCacheLine(unsigned int i, float4* A, float4* B){
 		unsigned int ITEMS  = pow(2,i);
 		//Clear the cache!
 
@@ -97,7 +101,9 @@ void MemoryTest_ReadWriteNoCacheLine(unsigned int i, float4* A, float4* B){
 			A[id]= A[id]+B[id];
 		}
 		double end = omp_get_wtime();
-		printf(" %0.3f\t",(3 * 4 * 4) * ITEMS / ((end - start)) / 1024.0 / 1024.0 / 1024.0);
+		double bandwidth =(3 * 4 * 4) * ITEMS / ((end - start)) / 1024.0 / 1024.0 / 1024.0;
+		printf(" %0.3f\t",bandwidth);
+		return bandwidth;
 }
 
 
@@ -143,6 +149,11 @@ int main(int argc, char *argv[]) {
 		D[i] = float4(3.0/float(i+1));
 	}
 
+double best_bandwidth , best_transfer_size, current_bandwidth;
+int best_threads ;
+
+best_bandwidth = best_transfer_size = best_threads = 0;
+printf("Performing ReadWrite Test: \n");
 for (int threads = start_threads; threads <= max_threads; threads++) {
 		omp_set_num_threads(threads);
 		printf("%3d\t", threads);
@@ -159,19 +170,26 @@ for (int threads = start_threads; threads <= max_threads; threads++) {
 	for (int i = 14; i < runs; i++) {
 		ClearCache(C,D,max_items);
 		if(force_cache_line){
-			MemoryTest_ReadWriteCacheLine(i, A, B);
+			current_bandwidth = MemoryTest_ReadWriteCacheLine(i, A, B);
 		}else{
-			MemoryTest_ReadWriteNoCacheLine(i, A, B);
+			current_bandwidth = MemoryTest_ReadWriteNoCacheLine(i, A, B);
 		}
+		if(best_bandwidth<current_bandwidth){
+			best_bandwidth = current_bandwidth;
+			best_threads = threads;
+			best_transfer_size = sizeof(float4)*pow(2,i)/1024.0/1024.0;
+		}
+
 	}
 	printf("\n");
 	free(A);
 	free(B);
 
 }
+printf("Best: %d threads, \t%0.3f GB/s, \t%0.3f MB \n",best_threads, best_bandwidth,best_transfer_size);
 
-///////
 
+best_bandwidth = best_transfer_size = best_threads = 0;
 printf("Performing Read Test: \n");
 
 for (int threads = start_threads; threads <= max_threads; threads++) {
@@ -187,19 +205,28 @@ for (int threads = start_threads; threads <= max_threads; threads++) {
 	}
 	for (int i = 14; i < runs; i++) {
 		ClearCache(C,D,max_items);
-		MemoryTest_Read(i, A, B);
+		current_bandwidth = MemoryTest_Read(i, A, B);
+
+		if(best_bandwidth<current_bandwidth){
+			best_bandwidth = current_bandwidth;
+			best_threads = threads;
+			best_transfer_size = sizeof(float4)*pow(2,i)/1024.0/1024.0;
+		}
 	}
 	printf("\n");
 	free(A);
 	free(B);
 }
 
+printf("Best: %d threads, \t%0.3f GB/s, \t%0.3f MB \n",best_threads, best_bandwidth,best_transfer_size);
 
+
+best_bandwidth = best_transfer_size = best_threads = 0;
 printf("Performing Write Test: \n");
 
 for (int threads = start_threads; threads <= max_threads; threads++) {
-		omp_set_num_threads(threads);
-		printf("%3d\t", threads);
+	omp_set_num_threads(threads);
+	printf("%3d\t", threads);
 
 	float4* A = (float4*) malloc (max_items*sizeof(float4));
 
@@ -210,13 +237,19 @@ for (int threads = start_threads; threads <= max_threads; threads++) {
 	}
 	for (int i = 14; i < runs; i++) {
 		ClearCache(C,D,max_items);
-		MemoryTest_Write(i, A);
+		current_bandwidth = MemoryTest_Write(i, A);
+
+		if(best_bandwidth<current_bandwidth){
+			best_bandwidth = current_bandwidth;
+			best_threads = threads;
+			best_transfer_size = sizeof(float4)*pow(2,i)/1024.0/1024.0;
+		}
 	}
 	printf("\n");
 	free(A);
 
 }
-
+printf("Best: %d threads, \t%0.3f GB/s, \t%0.3f MB \n",best_threads, best_bandwidth,best_transfer_size);
 
 	free(C);
 	free(D);
