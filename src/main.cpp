@@ -46,7 +46,7 @@ void MemoryTest_Write(unsigned int i, float4* A){
 		printf(" %0.3f\t",(1 * 4 * 4 * 4) * ITEMS/4.0 / ((end - start)) / 1024.0 / 1024.0 / 1024.0);
 }
 
-void MemoryTest_Read(unsigned int i, float4* A, float4 * B){
+void MemoryTest_Read(unsigned int i, float4* A, float * B){
 		unsigned int ITEMS  = pow(2,i);
 		//Clear the cache!
 
@@ -56,10 +56,10 @@ void MemoryTest_Read(unsigned int i, float4* A, float4 * B){
 		for (unsigned int id = 0; id < ITEMS; id+=4) {
 
 			float4 ans = A[id+0]+A[id+1]+A[id+2]+A[id+3];
-			B[id/4]=ans;
+			B[id/4]=ans.x+ans.y+ans.z+ans.w;
 		}
 		double end = omp_get_wtime();
-		printf(" %0.3f\t",(1 * 4 * 4 * 4) * ITEMS/4.0 / ((end - start)) / 1024.0 / 1024.0 / 1024.0);
+		printf(" %0.3f\t",(1 * 4 * 4 * 4+ 1*1*4) * ITEMS/4.0 / ((end - start)) / 1024.0 / 1024.0 / 1024.0);
 }
 
 
@@ -174,7 +174,7 @@ for (int threads = start_threads; threads <= max_threads; threads++) {
 		printf("%3d\t", threads);
 
 	float4* A = (float4*) malloc (max_items*sizeof(float4));
-	float4* B = (float4*) malloc (max_items*sizeof(float4));
+	float* B = (float*) malloc (max_items*sizeof(float));
 	//Generate data
 	#pragma omp parallel for 
 	for (int i = 0; i < max_items; i++) {
