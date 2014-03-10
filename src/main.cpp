@@ -61,7 +61,7 @@ void MemoryTest_Read(unsigned int i, float4* A, float * B){
 		for (unsigned int id = 0; id < ITEMS; id+=4) {
 
 			float4 ans = A[id+0]+A[id+1]+A[id+2]+A[id+3];
-			B[id/4]=horizontal_add(ans);
+			B[id/4]=horizontal_add(ans.mmvalue);
 		}
 		double end = omp_get_wtime();
 		printf(" %0.3f\t",(1 * 4 * 4 * 4+ 1*1*4) * ITEMS/4.0 / ((end - start)) / 1024.0 / 1024.0 / 1024.0);
