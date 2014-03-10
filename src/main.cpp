@@ -17,7 +17,7 @@ public:
 	inline float4 operator+(const float4& b) const {	return _mm_add_ps(mmvalue, b.mmvalue);}
 
 };
-	static inline real horizontal_add(const __m128 & a) {
+	static inline float horizontal_add(const __m128 & a) {
 	__m128 t1 = _mm_hadd_ps(a, a);
 	__m128 t2 = _mm_hadd_ps(t1, t1);
 	return _mm_cvtss_f32(t2);
