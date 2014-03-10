@@ -46,8 +46,26 @@ void MemoryTest_Write(unsigned int i, float4* A){
 		printf(" %0.3f\t",(1 * 4 * 4 * 4) * ITEMS/4.0 / ((end - start)) / 1024.0 / 1024.0 / 1024.0);
 }
 
+void MemoryTest_Read(unsigned int i, float4* A){
+		unsigned int ITEMS  = pow(2,i);
+		//Clear the cache!
 
-void MemoryTest_ReadCacheLine(unsigned int i, float4* A, float4* B){
+		//Run benchmark
+		double start = omp_get_wtime();
+		#pragma omp parallel for
+		for (unsigned int id = 0; id < ITEMS; id+=4) {
+
+			float4 ans = A[id+0]+A[id+1]+A[id+2]+A[id+3];
+			if(i==0){
+				A[id]=ans;
+			}
+		}
+		double end = omp_get_wtime();
+		printf(" %0.3f\t",(1 * 4 * 4 * 4) * ITEMS/4.0 / ((end - start)) / 1024.0 / 1024.0 / 1024.0);
+}
+
+
+void MemoryTest_ReadWriteCacheLine(unsigned int i, float4* A, float4* B){
 		unsigned int ITEMS  = pow(2,i);
 		//Clear the cache!
 
@@ -65,7 +83,7 @@ void MemoryTest_ReadCacheLine(unsigned int i, float4* A, float4* B){
 }
 
 
-void MemoryTest_ReadNoCacheLine(unsigned int i, float4* A, float4* B){
+void MemoryTest_ReadWriteNoCacheLine(unsigned int i, float4* A, float4* B){
 		unsigned int ITEMS  = pow(2,i);
 		//Clear the cache!
 
@@ -138,9 +156,9 @@ for (int threads = start_threads; threads <= max_threads; threads++) {
 	for (int i = 14; i < runs; i++) {
 		ClearCache(C,D,max_items);
 		if(force_cache_line){
-			MemoryTest_ReadCacheLine(i, A, B);
+			MemoryTest_ReadWriteCacheLine(i, A, B);
 		}else{
-			MemoryTest_ReadNoCacheLine(i, A, B);
+			MemoryTest_ReadWriteNoCacheLine(i, A, B);
 		}
 	}
 	printf("\n");
@@ -150,6 +168,29 @@ for (int threads = start_threads; threads <= max_threads; threads++) {
 }
 
 ///////
+
+printf("Performing Read Test: \n");
+
+for (int threads = start_threads; threads <= max_threads; threads++) {
+		omp_set_num_threads(threads);
+		printf("%3d\t", threads);
+
+	float4* A = (float4*) malloc (max_items*sizeof(float4));
+
+	//Generate data
+	#pragma omp parallel for 
+	for (int i = 0; i < max_items; i++) {
+		A[i] = float4(i+1);
+	}
+	for (int i = 14; i < runs; i++) {
+		ClearCache(C,D,max_items);
+		MemoryTest_Read(i, A);
+	}
+	printf("\n");
+	free(A);
+
+}
+
 
 printf("Performing Write Test: \n");
 
