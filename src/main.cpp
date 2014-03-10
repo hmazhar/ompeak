@@ -28,7 +28,26 @@ void ClearCache(float4* C, float4* D, unsigned int max){
 
 }
 
-void MemoryTest_CacheLine(unsigned int i, float4* A, float4* B){
+
+void MemoryTest_Write(unsigned int i, float4* A){
+		unsigned int ITEMS  = pow(2,i);
+		//Clear the cache!
+
+		//Run benchmark
+		double start = omp_get_wtime();
+		#pragma omp parallel for
+		for (unsigned int id = 0; id < ITEMS; id+=4) {
+			A[id+0]= id;
+			A[id+1]= id+1;
+			A[id+2]= id+2;
+			A[id+3]= id+3;
+		}
+		double end = omp_get_wtime();
+		printf(" %0.3f\t",(1 * 4 * 4 * 4) * ITEMS/4.0 / ((end - start)) / 1024.0 / 1024.0 / 1024.0);
+}
+
+
+void MemoryTest_ReadCacheLine(unsigned int i, float4* A, float4* B){
 		unsigned int ITEMS  = pow(2,i);
 		//Clear the cache!
 
@@ -46,7 +65,7 @@ void MemoryTest_CacheLine(unsigned int i, float4* A, float4* B){
 }
 
 
-void MemoryTest_NoCacheLine(unsigned int i, float4* A, float4* B){
+void MemoryTest_ReadNoCacheLine(unsigned int i, float4* A, float4* B){
 		unsigned int ITEMS  = pow(2,i);
 		//Clear the cache!
 
@@ -103,7 +122,7 @@ int main(int argc, char *argv[]) {
 		D[i] = float4(3.0/float(i+1));
 	}
 
-	for (int threads = start_threads; threads <= max_threads; threads++) {
+for (int threads = start_threads; threads <= max_threads; threads++) {
 		omp_set_num_threads(threads);
 		printf("%3d\t", threads);
 
@@ -119,9 +138,9 @@ int main(int argc, char *argv[]) {
 	for (int i = 14; i < runs; i++) {
 		ClearCache(C,D,max_items);
 		if(force_cache_line){
-			MemoryTest_CacheLine(i, A, B);
+			MemoryTest_ReadCacheLine(i, A, B);
 		}else{
-			MemoryTest_NoCacheLine(i, A, B);
+			MemoryTest_ReadNoCacheLine(i, A, B);
 		}
 	}
 	printf("\n");
@@ -129,6 +148,32 @@ int main(int argc, char *argv[]) {
 	free(B);
 
 }
+
+///////
+
+printf("Performing Write Test: \n");
+
+for (int threads = start_threads; threads <= max_threads; threads++) {
+		omp_set_num_threads(threads);
+		printf("%3d\t", threads);
+
+	float4* A = (float4*) malloc (max_items*sizeof(float4));
+
+	//Generate data
+	#pragma omp parallel for 
+	for (int i = 0; i < max_items; i++) {
+		A[i] = float4(i+1);
+	}
+	for (int i = 14; i < runs; i++) {
+		ClearCache(C,D,max_items);
+		MemoryTest_Write(i, A);
+	}
+	printf("\n");
+	free(A);
+
+}
+
+
 	free(C);
 	free(D);
 	return 0;
