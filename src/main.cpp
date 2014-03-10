@@ -53,24 +53,21 @@ double MemoryTest_Write(unsigned int i, float4* A){
 		return bandwidth;
 }
 
-double MemoryTest_Read(unsigned int i, float4* A){
+double MemoryTest_Read(unsigned int i, float4* A,  float * B){
 		unsigned int ITEMS  = pow(2,i);
 		//Clear the cache!
 
 		//Run benchmark
 		double start = omp_get_wtime();
 
-		float4 sum (0);
-
 		#pragma omp parallel for
 		for (unsigned int id = 0; id < ITEMS; id+=4) {
-			sum += A[id+0]+A[id+1]+A[id+2]+A[id+3];
+			B[id/4]= horizontal_add(A[id+0]+A[id+1]+A[id+2]+A[id+3]);
 		}
-		//Prevents compiler from optimizing away sum
-		assert(!_mm_testz_si128(sum, sum));
+
 
 		double end = omp_get_wtime();
-		double bandwidth =(1 * 4 * 4 * 4) * ITEMS/4.0 / ((end - start)) / 1024.0 / 1024.0 / 1024.0;
+		double bandwidth =(1 * 4 * 4 * 4+ 1  * 4 * 4) * ITEMS/4.0 / ((end - start)) / 1024.0 / 1024.0 / 1024.0;
 		printf(" %0.3f\t",bandwidth);
 		return bandwidth;
 }
@@ -211,7 +208,7 @@ for (int threads = start_threads; threads <= max_threads; threads++) {
 	}
 	for (int i = 14; i < runs; i++) {
 		ClearCache(C,D,max_items);
-		current_bandwidth = MemoryTest_Read(i, A);
+		current_bandwidth = MemoryTest_Read(i, A, B);
 
 		if(best_bandwidth<current_bandwidth){
 			best_bandwidth = current_bandwidth;
